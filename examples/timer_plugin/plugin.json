@@ -1,0 +1,12 @@
+{
+    "id": "com.rune.example.timer",
+    "name": "Timer Plugin",
+    "version": "1.0.0",
+    "api_version": 1,
+    "entry_symbol": "NodePlugin_GetAPI",
+    "library": "timer_plugin",
+    "dependencies": [],
+    "capabilities": [],
+    "min_host_version": "1.0.0"
+}
+
