@@ -240,6 +240,20 @@ typedef void (*JobFunction)(void* user_data);
 typedef void (*JobCompletionCallback)(void* user_data, bool success);
 
 /* ==========================================================================
+ * CSV Data Types
+ * ========================================================================== */
+
+typedef struct CsvRow {
+    const char** cells;
+    uint32_t count;
+} CsvRow;
+
+typedef struct CsvData {
+    CsvRow* rows;
+    uint32_t row_count;
+} CsvData;
+
+/* ==========================================================================
  * Host Services - Provided by RUNE to plugins
  * ========================================================================== */
 
@@ -270,6 +284,23 @@ struct HostServices {
     /* Timer for event nodes (returns timer ID, 0 on failure) */
     uint64_t (*create_timer)(uint32_t interval_ms, void (*callback)(void* user_data), void* user_data);
     void     (*destroy_timer)(uint64_t timer_id);
+    
+    /* JSON operations */
+    const char* (*json_parse)(const char* json_str, const char* json_path);
+    char* (*json_stringify)(const char* json_obj);
+    bool (*json_validate)(const char* json_str);
+    
+    /* CSV operations */
+    CsvData* (*csv_parse)(const char* csv_str, char delimiter);
+    void (*csv_free)(CsvData* data);
+    char* (*csv_stringify)(const CsvData* data, char delimiter);
+    
+    /* INI operations */
+    const char* (*ini_get)(const char* ini_str, const char* section, const char* key);
+    char* (*ini_set)(const char* ini_str, const char* section, const char* key, const char* value);
+    char** (*ini_get_sections)(const char* ini_str, uint32_t* count);
+    char** (*ini_get_keys)(const char* ini_str, const char* section, uint32_t* count);
+    void (*ini_free_strings)(char** strings, uint32_t count);
 };
 
 /* ==========================================================================
@@ -313,6 +344,34 @@ struct LuauRegistry {
 };
 
 /* ==========================================================================
+ * Plugin Settings Schema (JSON Schema-based)
+ * ========================================================================== */
+
+typedef struct PluginSettingsSchema {
+    const char* schema_json;   /* JSON schema defining settings structure */
+    const char* defaults_json; /* Default values as JSON */
+} PluginSettingsSchema;
+
+/* ==========================================================================
+ * Plugin Menubar Types
+ * ========================================================================== */
+
+typedef void (*MenuItemCallback)(void* user_data);
+
+typedef struct MenuItem {
+    const char* label;           /* Display label, NULL for separator */
+    const char* submenu_id;      /* If non-NULL, this item opens a submenu */
+    MenuItemCallback callback;   /* Callback when clicked (ignored if submenu) */
+    void* user_data;             /* User data passed to callback */
+} MenuItem;
+
+typedef struct MenuRegistration {
+    const char* menu_id;         /* Menu path, e.g. "Tools" or "Plugins/MyPlugin" */
+    const MenuItem* items;       /* Array of menu items */
+    uint32_t item_count;         /* Number of items */
+} MenuRegistration;
+
+/* ==========================================================================
  * Plugin Info
  * ========================================================================== */
 
@@ -344,6 +403,13 @@ typedef struct PluginAPI {
     void (*on_flow_loaded)(const char* flow_id);
     void (*on_flow_unloaded)(const char* flow_id);
     
+    /* Optional: Settings support (JSON schema-based) */
+    const PluginSettingsSchema* (*get_settings_schema)(void);
+    void (*on_settings_changed)(const char* settings_json);
+    
+    /* Optional: Menubar integration */
+    const MenuRegistration* (*get_menus)(uint32_t* count);
+    
 } PluginAPI;
 
 /* ==========================================================================
@@ -364,4 +430,3 @@ typedef const PluginAPI* (*PluginGetAPIFunc)(void);
 #endif
 
 #endif /* RUNE_PLUGIN_API_H */
-

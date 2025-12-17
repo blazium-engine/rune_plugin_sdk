@@ -116,5 +116,42 @@
 #define RUNE_EXEC_PIN_OUT(name) \
     {name, "execution", PIN_OUT, PIN_KIND_EXECUTION, 0}
 
+/**
+ * RUNE_DEFINE_SETTINGS_SCHEMA - Define a plugin settings schema
+ * 
+ * Usage:
+ *   RUNE_DEFINE_SETTINGS_SCHEMA(
+ *       "{\"type\":\"object\",\"properties\":{\"enabled\":{\"type\":\"boolean\"}}}",
+ *       "{\"enabled\":true}"
+ *   )
+ */
+#define RUNE_DEFINE_SETTINGS_SCHEMA(schema, defaults) \
+    static PluginSettingsSchema g_SettingsSchema = { schema, defaults }; \
+    static const PluginSettingsSchema* GetSettingsSchema(void) { return &g_SettingsSchema; }
+
+/**
+ * RUNE_MENU_ITEM - Define a menu item with callback
+ */
+#define RUNE_MENU_ITEM(label, callback, user_data) \
+    { label, NULL, callback, user_data }
+
+/**
+ * RUNE_MENU_SUBMENU - Define a submenu item
+ */
+#define RUNE_MENU_SUBMENU(label, submenu_id) \
+    { label, submenu_id, NULL, NULL }
+
+/**
+ * RUNE_MENU_SEPARATOR - Define a menu separator
+ */
+#define RUNE_MENU_SEPARATOR \
+    { NULL, NULL, NULL, NULL }
+
+/**
+ * RUNE_DEFINE_MENU - Define a menu registration
+ */
+#define RUNE_DEFINE_MENU(menu_id, items_array, count) \
+    { menu_id, items_array, count }
+
 #endif /* RUNE_PLUGIN_SDK_H */
 

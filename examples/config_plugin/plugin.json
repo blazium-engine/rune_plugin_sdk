@@ -1,0 +1,12 @@
+{
+    "id": "com.rune.example.config",
+    "name": "Config Plugin",
+    "version": "1.0.0",
+    "api_version": 1,
+    "author": "RUNE Team",
+    "description": "Example plugin demonstrating settings, menus, and data format APIs",
+    "library": "config_plugin",
+    "capabilities": ["filesystem"],
+    "dependencies": []
+}
+
