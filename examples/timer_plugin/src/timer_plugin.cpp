@@ -9,8 +9,30 @@
 #include "rune_plugin.h"
 #include <cstring>
 #include <cstdlib>
+#include <stdexcept>
 
 static HostServices* g_host = nullptr;
+
+// Helper: check if a given application environment flag is set to a truthy value.
+// This is used for crash-testing the host's plugin safety guards. In normal
+// operation these flags are unset, and the plugin behaves as usual.
+static bool IsTestFlagEnabled(HostServices* host, const char* key)
+{
+    if (!host || !host->app_env_get || !key)
+        return false;
+
+    const char* value = host->app_env_get(key);
+    if (!value || !value[0])
+        return false;
+
+    if (std::strcmp(value, "1") == 0)
+        return true;
+
+    if (std::strcmp(value, "true") == 0 || std::strcmp(value, "TRUE") == 0)
+        return true;
+
+    return false;
+}
 
 /* ============================================================================
  * Timer Event Node
@@ -206,6 +228,13 @@ static bool delay_execute(void* inst_ptr, ExecContext* ctx) {
     if (!inst || !ctx || !g_host) {
         return false;
     }
+
+    // Crash-testing hook for node execution: when the flag is enabled, this
+    // node will deliberately throw so the host can confirm that plugin node
+    // exceptions are contained and reported without crashing the app.
+    if (IsTestFlagEnabled(g_host, "RUNE_TEST_TIMER_THROW_IN_DELAY_EXECUTE")) {
+        throw std::runtime_error("Timer plugin test exception in delay_execute");
+    }
     
     // Get delay from input
     int64_t delay_ms = ctx->get_input_int(ctx, "DelayMs");
@@ -270,13 +299,25 @@ static NodeDesc delay_desc = {
 
 static bool on_load(HostServices* host) {
     g_host = host;
+
+    // Crash-testing hook: when RUNE_TEST_TIMER_THROW_ON_LOAD is set in the
+    // application environment, deliberately throw here so the host can verify
+    // that plugin on_load exceptions are caught and handled safely.
+    if (IsTestFlagEnabled(host, "RUNE_TEST_TIMER_THROW_ON_LOAD")) {
+        throw std::runtime_error("Timer plugin test exception in on_load");
+    }
+
     host->log(LOG_LEVEL_INFO, "Timer plugin loaded");
     return true;
 }
 
 static void on_register(PluginNodeRegistry* reg, LuauRegistry* luau) {
     (void)luau;
-    
+
+    if (g_host && IsTestFlagEnabled(g_host, "RUNE_TEST_TIMER_THROW_ON_REGISTER")) {
+        throw std::runtime_error("Timer plugin test exception in on_register");
+    }
+
     reg->register_node(&timer_desc, &timer_vtable);
     reg->register_node(&delay_desc, &delay_vtable);
     

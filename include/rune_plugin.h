@@ -13,7 +13,7 @@
  *       return true;
  *   }
  *   
- *   static void on_register(NodeRegistry* reg, LuauRegistry* luau) {
+ *   static void on_register(PluginNodeRegistry* reg, LuauRegistry* luau) {
  *       // Register your nodes here
  *   }
  *   
@@ -26,7 +26,7 @@
  *       on_load,
  *       on_register,
  *       on_unload,
- *       NULL, NULL, NULL
+ *       NULL, NULL, NULL, NULL, NULL
  *   };
  *   
  *   NODEPLUG_EXPORT const PluginAPI* NodePlugin_GetAPI() {
@@ -50,7 +50,7 @@
  *   
  * Then implement:
  *   - bool MyPlugin_OnLoad(HostServices* host)
- *   - void MyPlugin_OnRegister(NodeRegistry* reg, LuauRegistry* luau)
+ *   - void MyPlugin_OnRegister(PluginNodeRegistry* reg, LuauRegistry* luau)
  *   - void MyPlugin_OnUnload()
  */
 #define RUNE_DEFINE_PLUGIN(id, name, version, author, desc) \
@@ -62,7 +62,7 @@
         MyPlugin_OnLoad, \
         MyPlugin_OnRegister, \
         MyPlugin_OnUnload, \
-        NULL, NULL, NULL \
+        NULL, NULL, NULL, NULL, NULL \
     }; \
     NODEPLUG_EXPORT const PluginAPI* NodePlugin_GetAPI(void) { \
         return &g_MyPluginAPI; \
@@ -118,7 +118,13 @@
 
 /**
  * RUNE_DEFINE_SETTINGS_SCHEMA - Define a plugin settings schema
- * 
+ *
+ * When a plugin provides a settings schema via PluginAPI::get_settings_schema
+ * and implements PluginAPI::on_settings_changed, RUNE will:
+ *   - Persist settings to settings.json in the plugin's directory, and
+ *   - Automatically expose a settings dialog under a top-level menubar entry
+ *     named after the plugin.
+ *
  * Usage:
  *   RUNE_DEFINE_SETTINGS_SCHEMA(
  *       "{\"type\":\"object\",\"properties\":{\"enabled\":{\"type\":\"boolean\"}}}",
@@ -152,6 +158,67 @@
  */
 #define RUNE_DEFINE_MENU(menu_id, items_array, count) \
     { menu_id, items_array, count }
+
+/* ==========================================================================
+ * Environment Variable and Settings Access
+ * 
+ * Plugins can access environment variables, their own settings, and
+ * read-only RUNE application settings through HostServices.
+ * 
+ * Environment Variables:
+ *   const char* value = host->env_get("MY_VAR");
+ *   if (host->env_has("MY_VAR")) { ... }
+ * 
+ * Plugin Settings (this plugin's settings.json):
+ *   const char* settings = host->get_plugin_settings("com.example.myplugin");
+ *   // Returns JSON string of plugin's current settings
+ * 
+ * RUNE Settings (read-only global config):
+ *   const char* cache = host->get_rune_setting("cache_directory");
+ *   const char* flows = host->get_rune_setting("flows_directory");
+ *   const char* plugins = host->get_rune_setting("plugins_directory");
+ *   const char* lang = host->get_rune_setting("language_code");
+ *   const char* env = host->get_rune_setting("env_access");  // "true"/"false"
+ *   const char* sandbox = host->get_rune_setting("disable_directory_sandboxing");
+ *   const char* mcp = host->get_rune_setting("enable_mcp_server");
+ *   const char* port = host->get_rune_setting("mcp_server_port");
+ * ========================================================================== */
+
+/**
+ * RUNE_ENV_GET - Helper macro to get environment variable (legacy, uses flow env)
+ */
+#define RUNE_ENV_GET(host, key) ((host)->env_get(key))
+
+/**
+ * RUNE_ENV_HAS - Helper macro to check if environment variable exists (legacy, uses flow env)
+ */
+#define RUNE_ENV_HAS(host, key) ((host)->env_has(key))
+
+/**
+ * Flow Environment Variable Macros
+ */
+#define RUNE_FLOW_ENV_GET(host, key) ((host)->flow_env_get(key))
+#define RUNE_FLOW_ENV_HAS(host, key) ((host)->flow_env_has(key))
+#define RUNE_FLOW_ENV_SET(host, key, value) ((host)->flow_env_set(key, value))
+#define RUNE_FLOW_ENV_REMOVE(host, key) ((host)->flow_env_remove(key))
+
+/**
+ * Application Environment Variable Macros
+ */
+#define RUNE_APP_ENV_GET(host, key) ((host)->app_env_get(key))
+#define RUNE_APP_ENV_HAS(host, key) ((host)->app_env_has(key))
+#define RUNE_APP_ENV_SET(host, key, value) ((host)->app_env_set(key, value))
+#define RUNE_APP_ENV_REMOVE(host, key) ((host)->app_env_remove(key))
+
+/**
+ * RUNE_GET_PLUGIN_SETTINGS - Helper macro to get this plugin's settings JSON
+ */
+#define RUNE_GET_PLUGIN_SETTINGS(host, plugin_id) ((host)->get_plugin_settings(plugin_id))
+
+/**
+ * RUNE_GET_SETTING - Helper macro to get a RUNE application setting
+ */
+#define RUNE_GET_SETTING(host, setting_name) ((host)->get_rune_setting(setting_name))
 
 #endif /* RUNE_PLUGIN_SDK_H */
 

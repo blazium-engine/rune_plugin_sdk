@@ -301,6 +301,29 @@ struct HostServices {
     char** (*ini_get_sections)(const char* ini_str, uint32_t* count);
     char** (*ini_get_keys)(const char* ini_str, const char* section, uint32_t* count);
     void (*ini_free_strings)(char** strings, uint32_t count);
+    
+    /* Environment variables (from .env files and flow environment) */
+    /* Legacy functions - access flow environment for backward compatibility */
+    const char* (*env_get)(const char* key);
+    bool (*env_has)(const char* key);
+    
+    /* Flow environment variables (per-flow scope) */
+    const char* (*flow_env_get)(const char* key);
+    bool (*flow_env_has)(const char* key);
+    void (*flow_env_set)(const char* key, const char* value);
+    bool (*flow_env_remove)(const char* key);
+    
+    /* Application environment variables (global app scope) */
+    const char* (*app_env_get)(const char* key);
+    bool (*app_env_has)(const char* key);
+    void (*app_env_set)(const char* key, const char* value);
+    bool (*app_env_remove)(const char* key);
+    
+    /* Plugin settings (this plugin's settings JSON) */
+    const char* (*get_plugin_settings)(const char* plugin_id);
+    
+    /* RUNE settings (read-only global app config) */
+    const char* (*get_rune_setting)(const char* setting_name);
 };
 
 /* ==========================================================================

@@ -1,0 +1,10 @@
+{
+    "id": "com.rune.example.env",
+    "name": "Environment Plugin",
+    "version": "1.0.0",
+    "author": "RUNE Team",
+    "description": "Example plugin demonstrating environment variable and settings access",
+    "api_version": 1,
+    "entry": "env_plugin"
+}
+
